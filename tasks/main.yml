@@ -1,0 +1,25 @@
+---
+- name: Create aws home directories
+  sudo: yes
+  file:
+    path: "{{aws_home}}"
+    state: directory
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: 0755
+
+- name: Copy the memory report script to the box
+  sudo: yes
+  template:
+    src: ../templates/memreport.sh.j2
+    dest: "{{aws_home}}/memreport.sh"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: 0755
+
+- name: Add the job to cron
+  cron:
+    name: Push memory metrics to cloudwatch
+    minute: "{{cron_minutes}}"
+    user: "{{ansible_ssh_user}}"
+    job: "{{aws_home}}memreport.sh > /dev/null 2>&1"
