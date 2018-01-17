@@ -1,11 +1,14 @@
 #!/bin/bash
 
-instanceid=`wget -q -O - http://169.254.169.254/latest/meta-data/instance-id`
+INSTANCE_ID=`wget -q -O - http://169.254.169.254/latest/meta-data/instance-id`
+REGION="`wget -qO- http://instance-data/latest/meta-data/placement/availability-zone | sed -e 's:\([0-9][0-9]*\)[a-z]*\$:\\1:'`"
+# TODO: Make the tags configurable
+NAME_TAG="`aws ec2 describe-tags --filters "Name=resource-id,Values=$INSTANCE_ID" "Name=key,Values=Name" --region $REGION --output=text | cut -f5`"
+OWNER_TAG="`aws ec2 describe-tags --filters "Name=resource-id,Values=$INSTANCE_ID" "Name=key,Values=Owner" --region $REGION --output=text | cut -f5`"
+MEM_TOTAL=`free -m | grep 'Mem' | tr -s ' ' | cut -d ' ' -f 2`
+MEM_FREE=`free -m | grep 'buffers/cache' | tr -s ' ' | cut -d ' ' -f 4`
+let "MEM_UTIL_PERCENTAGE=100-MEM_FREE*100/MEM_TOTAL"
 
-memtotal=`free -m | grep 'Mem' | tr -s ' ' | cut -d ' ' -f 2`
-memfree=`free -m | grep 'buffers/cache' | tr -s ' ' | cut -d ' ' -f 4`
-let "memused=100-memfree*100/memtotal"
+/usr/local/bin/aws cloudwatch put-metric-data --metric-name "FreeMemoryMBytes" --namespace "System/Linux" --dimensions "INSTANCE_ID=$INSTANCE_ID,Name=NAME_TAG,Owner=$OWNER_TAG" --value "$MEM_FREE" --unit "Megabytes"
 
-/usr/local/bin/aws cloudwatch put-metric-data --metric-name "FreeMemoryMBytes" --namespace "System/Linux" --dimensions "InstanceId=$instanceid" --value "$memfree" --unit "Megabytes"
-
-/usr/local/bin/aws cloudwatch put-metric-data --metric-name "UsedMemoryPercent" --namespace "System/Linux" --dimensions "InstanceId=$instanceid" --value "$memused" --unit "Percent"
+/usr/local/bin/aws cloudwatch put-metric-data --metric-name "UsedMemoryPercent" --namespace "System/Linux" --dimensions "INSTANCE_ID=$INSTANCE_ID,Name=$NAME_TAG,Owner=$OWNER_TAG" --value "$MEM_UTIL_PERCENTAGE" --unit "Percent"
