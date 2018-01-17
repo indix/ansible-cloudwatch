@@ -22,4 +22,4 @@
     name: Push memory metrics to cloudwatch
     minute: "{{cron_minutes}}"
     user: "{{ansible_ssh_user}}"
-    job: "{{aws_home}}memreport.sh > /dev/null 2>&1"
+    job: "/bin/bash {{aws_home}}memreport.sh > /dev/null 2>&1"

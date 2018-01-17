@@ -1,4 +1,4 @@
-#!/bin/bash
+#! /bin/bash
 
 INSTANCE_ID=`wget -q -O - http://169.254.169.254/latest/meta-data/instance-id`
 REGION="`wget -qO- http://instance-data/latest/meta-data/placement/availability-zone | sed -e 's:\([0-9][0-9]*\)[a-z]*\$:\\1:'`"
@@ -9,6 +9,6 @@ MEM_TOTAL=`free -m | grep 'Mem' | tr -s ' ' | cut -d ' ' -f 2`
 MEM_FREE=`free -m | grep 'buffers/cache' | tr -s ' ' | cut -d ' ' -f 4`
 let "MEM_UTIL_PERCENTAGE=100-MEM_FREE*100/MEM_TOTAL"
 
-/usr/local/bin/aws cloudwatch put-metric-data --metric-name "FreeMemoryMBytes" --namespace "System/Linux" --dimensions "INSTANCE_ID=$INSTANCE_ID,Name=NAME_TAG,Owner=$OWNER_TAG" --value "$MEM_FREE" --unit "Megabytes"
+/usr/local/bin/aws cloudwatch put-metric-data --metric-name "FreeMemoryMBytes" --namespace "System/Linux" --dimensions "INSTANCE_ID=$INSTANCE_ID,Name=$NAME_TAG,Owner=$OWNER_TAG" --value "$MEM_FREE" --unit "Megabytes"
 
 /usr/local/bin/aws cloudwatch put-metric-data --metric-name "UsedMemoryPercent" --namespace "System/Linux" --dimensions "INSTANCE_ID=$INSTANCE_ID,Name=$NAME_TAG,Owner=$OWNER_TAG" --value "$MEM_UTIL_PERCENTAGE" --unit "Percent"
