@@ -7,6 +7,7 @@ NAME_TAG="`/usr/local/bin/aws ec2 describe-tags --filters "Name=resource-id,Valu
 OWNER_TAG="`/usr/local/bin/aws ec2 describe-tags --filters "Name=resource-id,Values=$INSTANCE_ID" "Name=key,Values=Owner" --region $REGION --output=text | cut -f5`"
 MEM_TOTAL=`free -m | grep 'Mem' | tr -s ' ' | cut -d ' ' -f 2`
 MEM_FREE=`free -m | grep 'buffers/cache' | tr -s ' ' | cut -d ' ' -f 4`
+[ -z "$MEM_FREE" ] && MEM_FREE=$((`free -m | grep 'Mem' | tr -s ' ' | cut -d ' ' -f 6` + `free -m | grep 'Mem' | tr -s ' ' | cut -d ' ' -f 4`))
 let "MEM_UTIL_PERCENTAGE=100-MEM_FREE*100/MEM_TOTAL"
 
 /usr/local/bin/aws cloudwatch put-metric-data --metric-name "FreeMemoryMBytes" --namespace "System/Linux" --dimensions "INSTANCE_ID=$INSTANCE_ID,Name=$NAME_TAG,Owner=$OWNER_TAG" --value "$MEM_FREE" --unit "Megabytes"
